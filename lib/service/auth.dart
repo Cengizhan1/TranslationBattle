@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class AuthService {
@@ -24,10 +25,17 @@ class AuthService {
     var user = await _auth.createUserWithEmailAndPassword(
         email: email, password: password);
 
-    await _firestore
-        .collection("Person")
-        .doc(user.user.uid)
-        .set({'userName': name, 'nick': nick, 'email': email});
+    String resimYolu =
+        "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
+
+    await _firestore.collection("Person").doc(user.user.uid).set({
+      'userName': name,
+      'nick': nick,
+      'email': email,
+      'elo': 200,
+      'durum': false,
+      'resim': resimYolu,
+    });
 
     return user.user;
   }
@@ -54,5 +62,16 @@ class AuthService {
     veriGuncellemeYolu.update(guncellenecekVeri).whenComplete(() {
       Fluttertoast.showToast(msg: "Guncellendi.");
     });
+  }
+
+  Future resimAl(String resim) async {
+    var data = await FirebaseStorage.instance.ref().child(resim);
+
+    var url = await data.getDownloadURL();
+
+    _firestore
+        .collection("Person")
+        .doc(_auth.currentUser.uid)
+        .update({"resim": url});
   }
 }
