@@ -4,20 +4,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:myfirsproje/Finish.dart';
 import 'package:myfirsproje/service/auth.dart';
 
-import 'Finish.dart';
+class rankedQueue extends StatefulWidget {
+  String user, homekullaniciAdi, odaID;
 
-class Home extends StatefulWidget {
-  String homekullaniciAdi;
-
-  Home({this.homekullaniciAdi});
+  rankedQueue({this.user, this.homekullaniciAdi, this.odaID});
 
   @override
-  _HomeState createState() => _HomeState();
+  _rankedQueueState createState() => _rankedQueueState();
 }
 
-class _HomeState extends State<Home> {
+class _rankedQueueState extends State<rankedQueue> {
   List<Icon> _scoreTracker = [];
   int _questionIndex = 0;
   int _totalScore = 0;
@@ -74,26 +73,76 @@ class _HomeState extends State<Home> {
 
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('kk:mm:ss \n EEE d MMM').format(now);
+    // Testin bittiğini firebase e bildiriyoruz ve sonucları kaydediyoruz
+    FirebaseFirestore.instance.collection("Games").doc(widget.odaID).update({
+      widget.user + "testDurum": "bitti",
+      widget.user + "totalScore": _totalScore,
+      widget.user + "time": timer.tick
+    });
+
+    FirebaseFirestore.instance
+        .collection("Person")
+        .doc(FirebaseAuth.instance.currentUser.uid)
+        .get()
+        .then((DocumentSnapshot ds) {
+      userElo = ds["elo"];
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => sonucHesaplama(
+                    user: widget.user,
+                    nick: widget.homekullaniciAdi,
+                    elo: userElo,
+                    odaID: widget.odaID,
+                  )));
+    });
+
+    //İki kullanıcı karşılaştırma ekranı
+    // FirebaseFirestore.instance
+    //     .collection("Games")
+    //     .doc(widget.odaID)
+    //     .get()
+    //     .then((value) {
+    //   if (value[1]["totalScore"] > value[0]["totalScore"]) {
+    //     print("2. kullanıcı kazandı");
+    //   } else if (value[1]["totalScore"] == value[0]["totalScore"]) {
+    //     print("berabere");
+    //   } else
+    //     print("2. kullanıcı kazandı");
+    // });
+    // Test bitince kullanılan oda siliniyor
+    // FirebaseFirestore.instance
+    //     .collection("Games")
+    //     .doc(FirebaseAuth.instance.currentUser.uid)
+    //     .delete();
 
     //  Kulanıcının test sonuçlarını firebase'e kaydediyoruz
-    final fireStore = FirebaseFirestore.instance;
-    CollectionReference firebaseRef = fireStore
-        .collection("Users")
-        .doc("normalGame")
-        .collection(FirebaseAuth.instance.currentUser.uid);
-    Map<String, dynamic> resultsData = {
-      'kullanıcıAdi': widget.homekullaniciAdi,
-      'totalScore': _totalScore,
-      'tarih': formattedDate,
-      'süre': timer.tick,
-    };
-    firebaseRef.doc(formattedDate).set(resultsData);
+    // final fireStore = FirebaseFirestore.instance;
+    // CollectionReference firebaseRef = fireStore
+    //     .collection("Users")
+    //     .doc("rankedGame")
+    //     .collection(FirebaseAuth.instance.currentUser.uid);
+    // Map<String, dynamic> resultsData = {
+    //   'oyunTürü': "Ranked",
+    //   'kullanıcıAdi': widget.homekullaniciAdi,
+    //   'totalScore': _totalScore,
+    //   'elo': userElo,
+    //   'tarih': formattedDate,
+    //   'süre': timer.tick,
+    // };
+    // firebaseRef.doc(formattedDate).set(resultsData);
+
+    // elo güncelleme
+    // fireStore
+    //     .collection('Person')
+    //     .doc(FirebaseAuth.instance.currentUser.uid)
+    //     .update({'elo': userElo});
 
     // Sonuç ekranını açıyoruz
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FinishNormal(
+        builder: (context) => Finishh(
           finishKullaniciAdi: widget.homekullaniciAdi,
           totalScore: _totalScore,
         ),
@@ -110,19 +159,19 @@ class _HomeState extends State<Home> {
       isitcorrect = false;
     });
     // what happens at the end of the quiz
-    // if (_questionIndex >= _questions.length) {
-    //   _resetQuiz();
-    // }
+    if (_questionIndex >= _questions.length) {
+      _resetQuiz();
+    }
   }
 
-  // void _resetQuiz() {
-  //   setState(() {
-  //     _questionIndex = 0;
-  //     _totalScore = 0;
-  //     _scoreTracker = [];
-  //     endOfQuiz = false;
-  //   });
-  // }
+  void _resetQuiz() {
+    setState(() {
+      _questionIndex = 0;
+      _totalScore = 0;
+      _scoreTracker = [];
+      endOfQuiz = false;
+    });
+  }
 
   double value = 0;
   int _counter;
@@ -414,6 +463,277 @@ class _HomeState extends State<Home> {
         );
       },
     );
+  }
+}
+
+class sonucHesaplama extends StatefulWidget {
+  int elo = 0;
+  String user, odaID = "", nick;
+  sonucHesaplama({this.user, this.elo, this.odaID, this.nick});
+  @override
+  _sonucHesaplamaState createState() => _sonucHesaplamaState();
+}
+
+class _sonucHesaplamaState extends State<sonucHesaplama> {
+  String bitisDurumu1 = "devam";
+  String bitisDurumu2 = "devam";
+  String u1Kazanma = "kaybetti";
+  String u2Kazanma = "kaybetti";
+  String user1ad, user2ad, user1resim, user2resim;
+  int user1score, user2score, user1time, user2time;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection("Games")
+            .doc(widget.odaID)
+            .snapshots(),
+        builder: (context, veri) {
+          var alinan = veri.data;
+          bitisDurumu1 = alinan["user1testDurum"].toString();
+          bitisDurumu2 = alinan["user2testDurum"].toString();
+
+          user1ad = alinan["user1"];
+          user1resim = alinan["user1resim"];
+          user2ad = alinan["user2"];
+          user2resim = alinan["user2resim"];
+
+          // İki kullanıcının testtinin bitip bitmediği kontrol ediliyor.
+          // Daha sonra kimin kazanıldığı total skor ve ssüreye göre belirleniyor
+          if (bitisDurumu1 == "bitti") {
+            user1score = alinan["user1totalScore"];
+            user1time = alinan["user1time"];
+          }
+          if (bitisDurumu2 == "bitti") {
+            user2score = alinan["user2totalScore"];
+            user2time = alinan["user2time"];
+          }
+
+          if (bitisDurumu1 == "bitti" && bitisDurumu2 == "bitti") {
+            if (alinan["user1totalScore"] > alinan["user2totalScore"]) {
+              u1Kazanma = "kazandı";
+            }
+            if (alinan["user1totalScore"] < alinan["user2totalScore"]) {
+              u2Kazanma = "kazandı";
+            }
+            if (alinan["user1totalScore"] == alinan["user2totalScore"]) {
+              if (alinan["user1time"] > alinan["user2time"]) {
+                u2Kazanma = "kazandı";
+              }
+              if (alinan["user1time"] < alinan["user2time"]) {
+                u1Kazanma = "kazandı";
+              }
+              if (alinan["user1time"] == alinan["user2time"]) {
+                u1Kazanma = u2Kazanma = "berabere";
+              }
+            }
+            // kullanılan oda siliniyor
+
+          }
+
+          return Scaffold(
+            backgroundColor: Color(0xE2013865),
+            body: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(50, 200, 0, 0),
+                  child: Row(
+                    children: [
+                      Image.network(
+                        user1resim.toString(),
+                        height: 150,
+                        width: 150,
+                      ),
+                      Image.network(
+                        user2resim.toString(),
+                        height: 150,
+                        width: 150,
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
+                  child: Row(
+                    children: [
+                      Text(
+                        user1ad,
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                      SizedBox(
+                        width: 50,
+                      ),
+                      Text(
+                        user2ad,
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
+                  child: Row(
+                    children: [
+                      (bitisDurumu1 == "bitti")
+                          ? Text(
+                              user1score.toString(),
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 20),
+                            )
+                          : CircularProgressIndicator(
+                              color: Colors.red, strokeWidth: 5),
+                      SizedBox(
+                        width: 50,
+                      ),
+                      (bitisDurumu2 == "bitti")
+                          ? Text(
+                              user2score.toString(),
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 20),
+                            )
+                          : CircularProgressIndicator(
+                              color: Colors.red, strokeWidth: 5),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
+                  child: Row(
+                    children: [
+                      (bitisDurumu1 == "bitti")
+                          ? Text(
+                              user1time.toString(),
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 20),
+                            )
+                          : CircularProgressIndicator(
+                              color: Colors.red, strokeWidth: 5),
+                      SizedBox(
+                        width: 75,
+                      ),
+                      (bitisDurumu2 == "bitti")
+                          ? Text(
+                              user2time.toString(),
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 20),
+                            )
+                          : CircularProgressIndicator(
+                              color: Colors.red, strokeWidth: 5),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 50,
+                        height: 50,
+                      ),
+                      (bitisDurumu1 == "bitti" && bitisDurumu2 == "bitti")
+                          ? u1Kazanma != "berabere"
+                              ? u1Kazanma == "kazandı"
+                                  ? Text("$user1ad kazandı")
+                                  : Text("$user2ad kazandı")
+                              : Text("berabere")
+                          : Text("Diğer kullanici bekleniyor")
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    (bitisDurumu1 == "bitti" && bitisDurumu2 == "bitti")
+                        ? ElevatedButton(
+                            onPressed: () {
+                              if ((widget.nick == user1ad)) {
+                                print(
+                                    "sa sa sasasasaasasasssaassssssssssssssssssssssssssssssssss");
+                                if (alinan["silmeDurumu"] == false) {
+                                  FirebaseFirestore.instance
+                                      .collection("Games")
+                                      .doc(widget.odaID)
+                                      .update({"silmeDurumu": true});
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Finishh(
+                                        finishKullaniciAdi: widget.nick,
+                                        totalScore: user1score,
+                                        kazan: u1Kazanma,
+                                        elo: widget.elo,
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  FirebaseFirestore.instance
+                                      .collection("Games")
+                                      .doc(widget.odaID)
+                                      .delete();
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Finishh(
+                                        finishKullaniciAdi: widget.nick,
+                                        totalScore: user1score,
+                                        kazan: u1Kazanma,
+                                        elo: widget.elo,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } else {
+                                if (alinan["silmeDurumu"] == false) {
+                                  FirebaseFirestore.instance
+                                      .collection("Games")
+                                      .doc(widget.odaID)
+                                      .update({"silmeDurumu": true});
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Finishh(
+                                        finishKullaniciAdi: widget.nick,
+                                        totalScore: user2score,
+                                        kazan: u2Kazanma,
+                                        elo: widget.elo,
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  FirebaseFirestore.instance
+                                      .collection("Games")
+                                      .doc(widget.odaID)
+                                      .delete();
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => Finishh(
+                                        finishKullaniciAdi: widget.nick,
+                                        totalScore: user2score,
+                                        kazan: u2Kazanma,
+                                        elo: widget.elo,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            child: Text("Bitir"),
+                            style: ElevatedButton.styleFrom(
+                              primary: Color(0xFF1A8B8B),
+                              fixedSize: (Size(75, 75)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(38),
+                              ),
+                            ),
+                          )
+                        : Text(""),
+                  ],
+                )
+              ],
+            ),
+          );
+        });
   }
 }
 
