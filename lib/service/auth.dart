@@ -35,6 +35,7 @@ class AuthService {
       'elo': 200,
       'durum': false,
       'resim': resimYolu,
+      'level': 1,
     });
 
     return user.user;

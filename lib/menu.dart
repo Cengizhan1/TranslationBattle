@@ -1,12 +1,17 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:myfirsproje/home.dart';
 import 'package:myfirsproje/main.dart';
 import 'package:myfirsproje/rankedQueue.dart';
 import 'package:myfirsproje/service/auth.dart';
+import 'package:myfirsproje/soruEkleme.dart';
+import 'package:myfirsproje/timeTrial.dart';
 
 import 'Finish.dart';
 
@@ -136,9 +141,16 @@ class _MenuState extends State<Menu> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        circButton(FontAwesomeIcons.info, rankLaunchScreen()),
+                        circButton(FontAwesomeIcons.info, soruEkleme()),
                         circButton(FontAwesomeIcons.medal, achievementScreen()),
-                        circButton(FontAwesomeIcons.lightbulb, hintScreen()),
+                        circButton(
+                            FontAwesomeIcons.lightbulb,
+                            Finishh(
+                              elo: 150,
+                              finishKullaniciAdi: "cengiz",
+                              kazan: "kazandı",
+                              totalScore: 7,
+                            )),
                         circButton(FontAwesomeIcons.cog, profileScreen()),
                       ],
                     ),
@@ -147,12 +159,12 @@ class _MenuState extends State<Menu> {
                       children: [
                         GestureDetector(
                           onTap: () {
+                            final list = nextNumbers(10, min: 0, max: 29);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ChoiseLevel(
-                                  lKullanici: alinanVeri,
-                                ),
+                                    lKullanici: alinanVeri, list: list),
                               ),
                             );
                           },
@@ -164,7 +176,19 @@ class _MenuState extends State<Menu> {
                               width),
                         ),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            final list = nextNumbers(10, min: 0, max: 29);
+                            print(list[1]);
+                            print(list);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => timeTrial(
+                                  list: list,
+                                ),
+                              ),
+                            );
+                          },
                           child: modeButton(
                               'Time Trial',
                               'Race against the clock',
@@ -174,6 +198,7 @@ class _MenuState extends State<Menu> {
                         ),
                         GestureDetector(
                           onTap: () {
+                            final list = nextNumbers(10, min: 0, max: 29);
                             var currentID =
                                 FirebaseAuth.instance.currentUser.uid;
                             FirebaseFirestore.instance
@@ -205,6 +230,7 @@ class _MenuState extends State<Menu> {
                                                 user: "user2",
                                                 nick: alinanVeri,
                                                 odaID: odakurucuid,
+                                                list: list,
                                               )));
                                 }
                               }
@@ -224,6 +250,7 @@ class _MenuState extends State<Menu> {
                                 "user2time": 0,
                                 "user1testDurum": "devam",
                                 "user2testDurum": "baslamadi",
+                                "silmeDurumu": false
                               });
                               return Navigator.pushReplacement(
                                   context,
@@ -232,6 +259,7 @@ class _MenuState extends State<Menu> {
                                             user: "user1",
                                             nick: alinanVeri,
                                             odaID: currentID,
+                                            list: list,
                                           )));
                             });
                           },
@@ -257,6 +285,17 @@ class _MenuState extends State<Menu> {
         ),
       ),
     );
+  }
+
+  int nextNumber({int min, int max}) => min + Random().nextInt(max - min + 1);
+
+  List<int> nextNumbers(int length, {int min, int max}) {
+    final numbers = Set<int>();
+    while (numbers.length < length) {
+      final number = nextNumber(min: min, max: max);
+      numbers.add(number);
+    }
+    return List.of(numbers);
   }
 
   Padding circButton(IconData icon, Widget page) {
@@ -348,7 +387,7 @@ class _KullaniciGecmisState extends State<KullaniciGecmis> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection("Users")
-            .doc("ID")
+            .doc("normalGame")
             .collection(FirebaseAuth.instance.currentUser.uid)
             .orderBy("tarih", descending: true)
             .snapshots(),
@@ -388,11 +427,6 @@ class _KullaniciGecmisState extends State<KullaniciGecmis> {
                           ),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: Text(veri[index]["elo"].toString(),
-                                style: TextStyle(fontSize: 15)),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
                             child: Text(veri[index]["süre"].toString(),
                                 style: TextStyle(fontSize: 15)),
                           ),
@@ -423,8 +457,9 @@ class _KullaniciGecmisState extends State<KullaniciGecmis> {
 // Level seçme ekranı
 class ChoiseLevel extends StatefulWidget {
   String lKullanici;
+  List<int> list;
 
-  ChoiseLevel({this.lKullanici});
+  ChoiseLevel({this.lKullanici, this.list});
 
   @override
   _ChoiseLevelState createState() => _ChoiseLevelState();
@@ -433,198 +468,143 @@ class ChoiseLevel extends StatefulWidget {
 class _ChoiseLevelState extends State<ChoiseLevel> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFF303247),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                "Levels",
-                style: TextStyle(
-                  fontFamily: "yazi",
-                  fontSize: 45,
-                  color: Color(0xFFC9F3F3),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(10, 10, 10, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection("Person")
+            .doc(FirebaseAuth.instance.currentUser.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          var veri = snapshot.data;
+          var levels = veri["level"];
+          return Scaffold(
+            backgroundColor: Color(0xFF303247),
+            body: SingleChildScrollView(
+              child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Color(0xFF00FFFA).withOpacity(.7),
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Color(0xE404805A).withOpacity(.35),
-                              blurRadius: 40,
-                              spreadRadius: 2)
-                        ]),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => Home(
-                              homekullaniciAdi: widget.lKullanici,
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        primary: Color(0xFF1A8B8B),
-                        fixedSize: (Size(75, 75)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(38),
-                        ),
-                      ),
-                      child: Image.network(
-                        "https://cdn-icons-png.flaticon.com/512/3564/3564180.png",
-                        height: 45,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      "Levels",
+                      style: TextStyle(
+                        fontFamily: "yazi",
+                        fontSize: 45,
+                        color: Color(0xFFC9F3F3),
                       ),
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Color(0xFF00FFFA).withOpacity(.7),
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Color(0xE404805A).withOpacity(.35),
-                              blurRadius: 40,
-                              spreadRadius: 2)
-                        ]),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        primary: Color(0xFF1A8B8B),
-                        fixedSize: (Size(75, 75)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(38),
-                        ),
-                      ),
-                      child: Image.network(
-                        "https://cdn-icons-png.flaticon.com/512/641/641693.png",
-                        height: 40,
-                      ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(10, 10, 10, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/1.png?alt=media&token=3720e6ec-ea48-4cdf-a1fc-3790b59241c8",
+                            1,
+                            levels),
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/2.png?alt=media&token=ebf89548-46f4-4158-bf6a-2f8032f90bef",
+                            2,
+                            levels),
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/3.png?alt=media&token=3a6147d3-41ea-46f0-af68-49c435b57ba0",
+                            3,
+                            levels),
+                      ],
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Color(0xFF00FFFA).withOpacity(.7),
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Color(0xE404805A).withOpacity(.35),
-                              blurRadius: 40,
-                              spreadRadius: 2)
-                        ]),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        primary: Color(0xFF1A8B8B),
-                        fixedSize: (Size(75, 75)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(38),
-                        ),
-                      ),
-                      child: Image.network(
-                        "https://cdn-icons-png.flaticon.com/512/641/641693.png",
-                        height: 40,
-                      ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(10, 15, 10, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/4.png?alt=media&token=11592df6-49da-4497-b8bd-794c4a4945f4",
+                            4,
+                            levels),
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/5.png?alt=media&token=392a9ee9-172d-4e08-b9e1-21954123939f",
+                            5,
+                            levels),
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/6.png?alt=media&token=3029f9c1-79b0-4bce-bf38-50274255a8e1",
+                            6,
+                            levels),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(10, 15, 10, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/7.png?alt=media&token=d1a691af-7abe-4619-a146-bb8c8b3351f7",
+                            7,
+                            levels),
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/8.png?alt=media&token=22bf8e50-2395-4e47-a227-cef2086ae131",
+                            8,
+                            levels),
+                        levelButton(
+                            "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/9.png?alt=media&token=f49332e2-5d7c-4969-9226-0a7d688e9bb2",
+                            9,
+                            levels),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(10, 15, 10, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Color(0xFF00FFFA).withOpacity(.7),
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Color(0xE404805A).withOpacity(.35),
-                              blurRadius: 40,
-                              spreadRadius: 2)
-                        ]),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        primary: Color(0xFF1A8B8B),
-                        fixedSize: (Size(75, 75)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(38),
-                        ),
-                      ),
-                      child: Image.network(
-                        "https://cdn-icons-png.flaticon.com/512/641/641693.png",
-                        height: 120,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Color(0xFF00FFFA).withOpacity(.7),
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Color(0xE404805A).withOpacity(.35),
-                              blurRadius: 40,
-                              spreadRadius: 2)
-                        ]),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        primary: Color(0xFF1A8B8B),
-                        fixedSize: (Size(75, 75)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(38),
-                        ),
-                      ),
-                      child: Image.network(
-                        "https://cdn-icons-png.flaticon.com/512/641/641693.png",
-                        height: 40,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Color(0xFF00FFFA).withOpacity(.7),
-                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Color(0xE404805A).withOpacity(.35),
-                              blurRadius: 40,
-                              spreadRadius: 2)
-                        ]),
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        primary: Color(0xFF1A8B8B),
-                        fixedSize: (Size(75, 75)),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(38),
-                        ),
-                      ),
-                      child: Image.network(
-                        "https://cdn-icons-png.flaticon.com/512/641/641693.png",
-                        height: 40,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          );
+        });
+  }
+
+  Padding levelButton(String url, int level, int kilit) {
+    var kilitKontrol = false;
+
+    if (kilit < level) {
+      url =
+          "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/unlock.png?alt=media&token=02c336f7-f810-4f74-bde9-588db4592f2a";
+      kilitKontrol = true;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+      child: Container(
+        decoration: BoxDecoration(
+            color: Color(0xFF00FFFA).withOpacity(.7),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                  color: Color(0xE404805A).withOpacity(.35),
+                  blurRadius: 40,
+                  spreadRadius: 2)
+            ]),
+        child: ElevatedButton(
+          onPressed: () {
+            if (kilitKontrol == false) {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Home(
+                            homekullaniciAdi: widget.lKullanici,
+                            list: widget.list,
+                          )));
+            } else {
+              Fluttertoast.showToast(msg: "Bu seviye kilitlidir!");
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            primary: Color(0xFF1A8B8B),
+            fixedSize: (Size(75, 75)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(38),
             ),
-          ],
+          ),
+          child: Image.network(
+            url,
+            height: 40,
+          ),
         ),
       ),
     );
@@ -808,219 +788,231 @@ class _profileScreenState extends State<profileScreen> {
             .doc(FirebaseAuth.instance.currentUser.uid)
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
-          } else {
-            var urlTutucu = snapshot.data["resim"];
-            return Scaffold(
-              backgroundColor: Color(0xE2013865),
-              body: SingleChildScrollView(
-                child: Stack(
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          alignment: Alignment.topRight,
-                          child: IconButton(
-                            onPressed: () {
-                              _authService.signOut();
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => GirisEkrani()));
-                            },
-                            icon: Icon(
-                              Icons.exit_to_app,
-                              color: Color(0xE4D0C5C5),
-                              size: 25,
-                            ),
+          var urlTutucu = snapshot.data["resim"];
+          var nick = snapshot.data["nick"];
+          var userName = snapshot.data["userName"];
+          return Scaffold(
+            backgroundColor: Color(0xE2013865),
+            body: SingleChildScrollView(
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      Container(
+                        alignment: Alignment.topRight,
+                        child: IconButton(
+                          onPressed: () {
+                            _authService.signOut();
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => GirisEkrani()));
+                          },
+                          icon: Icon(
+                            Icons.exit_to_app,
+                            color: Color(0xE4D0C5C5),
+                            size: 25,
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 13, 0, 30),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Avatar()));
-                            },
-                            style: ElevatedButton.styleFrom(
-                              primary: Color(0xff055884),
-                              fixedSize: Size(95, 95),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(60),
-                              ),
-                            ),
-                            child: Image.network(
-                              urlTutucu,
-                              height: 95,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 13, 0, 30),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Avatar()));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            primary: Color(0xff055884),
+                            fixedSize: Size(95, 95),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(60),
                             ),
                           ),
+                          child: Image.network(
+                            urlTutucu,
+                            height: 95,
+                          ),
                         ),
-                        Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Container(
-                              height: size.height * .55,
-                              width: size.width,
-                              decoration: BoxDecoration(
-                                  color: Color(0xFF105A58).withOpacity(.75),
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(28)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color:
-                                            Color(0xE4928686).withOpacity(.6),
-                                        blurRadius: 50,
-                                        spreadRadius: 2)
-                                  ]),
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(15, 12, 15, 0),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        alignment: Alignment.center,
-                                        child: TextFormField(
-                                          controller: adc,
-                                          style: TextStyle(color: Colors.white),
-                                          decoration: const InputDecoration(
-                                            prefixIcon: Icon(
-                                              Icons.person,
-                                              color: Color(0xFFD1D9DC),
-                                            ),
-                                            hintText: "Yeni kullanıcı adı",
-                                            prefixText: " ",
-                                            hintStyle:
-                                                TextStyle(color: Colors.grey),
-                                            focusedBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                              color: Colors.white,
-                                            )),
-                                            enabledBorder: UnderlineInputBorder(
+                      ),
+                      Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Container(
+                            height: size.height * .55,
+                            width: size.width,
+                            decoration: BoxDecoration(
+                                color: Color(0xFF105A58).withOpacity(.75),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(28)),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color: Color(0xE4928686).withOpacity(.6),
+                                      blurRadius: 50,
+                                      spreadRadius: 2)
+                                ]),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(15, 12, 15, 0),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      alignment: Alignment.center,
+                                      child: TextFormField(
+                                        controller: adc,
+                                        style: TextStyle(color: Colors.white),
+                                        decoration: const InputDecoration(
+                                          prefixIcon: Icon(
+                                            Icons.person,
+                                            color: Color(0xFFD1D9DC),
+                                          ),
+                                          hintText: "Yeni kullanıcı adı",
+                                          prefixText: " ",
+                                          hintStyle:
+                                              TextStyle(color: Colors.grey),
+                                          focusedBorder: UnderlineInputBorder(
                                               borderSide: BorderSide(
-                                                color: Colors.white,
-                                              ),
+                                            color: Colors.white,
+                                          )),
+                                          enabledBorder: UnderlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.white,
                                             ),
                                           ),
                                         ),
                                       ),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Container(
-                                        alignment: Alignment.center,
-                                        child: TextFormField(
-                                          controller: nickc,
-                                          style: TextStyle(color: Colors.white),
-                                          decoration: const InputDecoration(
-                                            prefixIcon: Icon(
-                                              Icons.sports_esports,
-                                              color: Color(0xFFD1D9DC),
-                                            ),
-                                            hintText: "Yeni nick",
-                                            prefixText: " ",
-                                            hintStyle:
-                                                TextStyle(color: Colors.grey),
-                                            focusedBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                              color: Colors.white,
-                                            )),
-                                            enabledBorder: UnderlineInputBorder(
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Container(
+                                      alignment: Alignment.center,
+                                      child: TextFormField(
+                                        controller: nickc,
+                                        style: TextStyle(color: Colors.white),
+                                        decoration: const InputDecoration(
+                                          prefixIcon: Icon(
+                                            Icons.sports_esports,
+                                            color: Color(0xFFD1D9DC),
+                                          ),
+                                          hintText: "Yeni nick",
+                                          prefixText: " ",
+                                          hintStyle:
+                                              TextStyle(color: Colors.grey),
+                                          focusedBorder: UnderlineInputBorder(
                                               borderSide: BorderSide(
-                                                color: Colors.white,
-                                              ),
+                                            color: Colors.white,
+                                          )),
+                                          enabledBorder: UnderlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.white,
                                             ),
                                           ),
                                         ),
                                       ),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Container(
-                                        alignment: Alignment.center,
-                                        child: TextFormField(
-                                          obscureText: true,
-                                          controller: sifrec,
-                                          validator: (_passwordController) {
-                                            return _passwordController.length >=
-                                                    6
-                                                ? null
-                                                : "Şifre 6 karakterden az olamaz";
-                                          },
-                                          style: TextStyle(color: Colors.white),
-                                          decoration: const InputDecoration(
-                                            prefixIcon: Icon(
-                                              Icons.vpn_key,
-                                              color: Color(0xFFD1D9DC),
-                                            ),
-                                            hintText: "Yeni şifre",
-                                            prefixText: " ",
-                                            hintStyle:
-                                                TextStyle(color: Colors.grey),
-                                            focusedBorder: UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                              color: Colors.white,
-                                            )),
-                                            enabledBorder: UnderlineInputBorder(
-                                              borderSide: BorderSide(
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        height: 40,
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          {
-                                            _authService.guncelle(sifrec.text,
-                                                nickc.text, adc.text);
-                                          }
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Container(
+                                      alignment: Alignment.center,
+                                      child: TextFormField(
+                                        obscureText: true,
+                                        controller: sifrec,
+                                        validator: (_passwordController) {
+                                          return _passwordController.length >= 6
+                                              ? null
+                                              : "Şifre 6 karakterden az olamaz";
                                         },
-                                        style: ElevatedButton.styleFrom(
-                                            primary: Color(0xff055884),
-                                            fixedSize: Size(250, 55),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(25))),
-                                        child: Text(
-                                          'Güncelle',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 25,
+                                        style: TextStyle(color: Colors.white),
+                                        decoration: const InputDecoration(
+                                          prefixIcon: Icon(
+                                            Icons.vpn_key,
+                                            color: Color(0xFFD1D9DC),
+                                          ),
+                                          hintText: "Yeni şifre",
+                                          prefixText: " ",
+                                          hintStyle:
+                                              TextStyle(color: Colors.grey),
+                                          focusedBorder: UnderlineInputBorder(
+                                              borderSide: BorderSide(
+                                            color: Colors.white,
+                                          )),
+                                          enabledBorder: UnderlineInputBorder(
+                                            borderSide: BorderSide(
                                               color: Colors.white,
-                                              fontFamily: 'Manrope',
-                                              decoration: TextDecoration.none),
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    SizedBox(
+                                      height: 40,
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        {
+                                          if (sifrec.text == "") {
+                                            Fluttertoast.showToast(
+                                                msg:
+                                                    "Şifre kısmı boş bırakılamaz!");
+                                            return;
+                                          }
+                                          _authService.guncelle(
+                                            sifrec.text,
+                                            (nickc.text == ""
+                                                ? nickc.text = nick
+                                                : nickc.text),
+                                            (adc.text == ""
+                                                ? adc.text = userName
+                                                : adc.text),
+                                          );
+                                        }
+                                        adc.clear();
+                                        sifrec.clear();
+                                        nickc.clear();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                          primary: Color(0xff055884),
+                                          fixedSize: Size(250, 55),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(25))),
+                                      child: Text(
+                                        'Güncelle',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 25,
+                                            color: Colors.white,
+                                            fontFamily: 'Manrope',
+                                            decoration: TextDecoration.none),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            );
-          }
+            ),
+          );
         });
   }
 }
 
 class rankLaunchScreen extends StatefulWidget {
   String user, nick, odaID;
+  List<int> list;
 
-  rankLaunchScreen({this.user, this.nick, this.odaID});
+  rankLaunchScreen({this.user, this.nick, this.odaID, this.list});
 
   @override
   _rankLaunchScreenState createState() => _rankLaunchScreenState();
@@ -1056,6 +1048,7 @@ class _rankLaunchScreenState extends State<rankLaunchScreen> {
                             user: widget.user,
                             homekullaniciAdi: widget.nick,
                             odaID: widget.odaID,
+                            list: widget.list,
                           ),
                         ),
                       );

@@ -16,6 +16,8 @@ class FinishNormal extends StatefulWidget {
 }
 
 class _FinishNormalState extends State<FinishNormal> {
+  int kontrol = 0;
+
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
@@ -27,6 +29,15 @@ class _FinishNormalState extends State<FinishNormal> {
               .doc(FirebaseAuth.instance.currentUser.uid)
               .snapshots(),
           builder: (context, snapshot) {
+            var level = snapshot.data["level"];
+
+            if (widget.totalScore > 7 && kontrol == 0) {
+              FirebaseFirestore.instance
+                  .collection("Person")
+                  .doc(FirebaseAuth.instance.currentUser.uid)
+                  .update({"level": level + 1});
+              kontrol = 1;
+            }
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(),
@@ -200,6 +211,7 @@ class _FinishNormalState extends State<FinishNormal> {
   }
 }
 
+//Ranked finish ekranı
 class Finishh extends StatefulWidget {
   String finishKullaniciAdi;
   String kazan;
@@ -278,7 +290,7 @@ class _FinishhState extends State<Finishh> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              height: size.height * .5,
+                              height: size.height * .6,
                               width: size.width * .75,
                               decoration: BoxDecoration(
                                   color: Color(0xFF43456D).withOpacity(.85),
@@ -286,9 +298,9 @@ class _FinishhState extends State<Finishh> {
                                       BorderRadius.all(Radius.circular(28)),
                                   boxShadow: [
                                     BoxShadow(
-                                        color: (widget.totalScore <= 7)
+                                        color: (widget.kazan == "kaybetti")
                                             ? Color(0xE4FF0000).withOpacity(.5)
-                                            : (widget.totalScore > 7)
+                                            : (widget.kazan == "kazandı")
                                                 ? Color(0xE41FFF42)
                                                     .withOpacity(.6)
                                                 : null,
@@ -325,15 +337,15 @@ class _FinishhState extends State<Finishh> {
                                     height: 10,
                                   ),
                                   Text(
-                                    (widget.totalScore <= 7)
+                                    (widget.kazan == "kaybetti")
                                         ? "-5"
-                                        : (widget.totalScore > 7)
+                                        : (widget.kazan == "kazandı")
                                             ? "+5"
                                             : null,
                                     style: TextStyle(
-                                      color: (widget.totalScore <= 7)
+                                      color: (widget.kazan == "kaybetti")
                                           ? Colors.red
-                                          : (widget.totalScore > 7)
+                                          : (widget.kazan == "kazandı")
                                               ? Colors.green
                                               : null,
                                       fontSize: 60,
@@ -347,13 +359,133 @@ class _FinishhState extends State<Finishh> {
                                       color: Color(0xFFC7C768),
                                     ),
                                   ),
+                                  SizedBox(
+                                    height: 40,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 23),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => Menu(),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            "Quit",
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              color: Color(0xFFC7D9D2),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(right: 23),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            var currentID = FirebaseAuth
+                                                .instance.currentUser.uid;
+                                            FirebaseFirestore.instance
+                                                .collection("Games")
+                                                .get()
+                                                .then((data) {
+                                              var readdata = data.docs;
+                                              var odakurucuid;
+                                              for (int i = 0;
+                                                  i < readdata.length;
+                                                  i++) {
+                                                if (readdata[i]
+                                                        ["odaVisiblity"] ==
+                                                    true) {
+                                                  odakurucuid =
+                                                      readdata[i]["odaID"];
+                                                  FirebaseFirestore.instance
+                                                      .collection("Games")
+                                                      .doc(odakurucuid)
+                                                      .update({
+                                                    "odaVisiblity": false,
+                                                    "user2": widget
+                                                        .finishKullaniciAdi,
+                                                    "user2resim":
+                                                        resim.toString(),
+                                                    "user2totalScore": 0,
+                                                    "user2time": 0,
+                                                    "user2testDurum": "devam",
+                                                  });
+                                                  print(odakurucuid);
+                                                  return Navigator
+                                                      .pushReplacement(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                              builder: (context) =>
+                                                                  rankLaunchScreen(
+                                                                    user:
+                                                                        "user2",
+                                                                    nick: widget
+                                                                        .finishKullaniciAdi,
+                                                                    odaID:
+                                                                        odakurucuid,
+                                                                  )));
+                                                }
+                                              }
+                                              FirebaseFirestore.instance
+                                                  .collection("Games")
+                                                  .doc(currentID)
+                                                  .set({
+                                                "odaID": currentID,
+                                                "odaVisiblity": true,
+                                                "user1":
+                                                    widget.finishKullaniciAdi,
+                                                "user2": "Waiting",
+                                                "user1resim": resim.toString(),
+                                                "user2resim": "bekle",
+                                                "user1totalScore": 0,
+                                                "user2totalScore": 0,
+                                                "user1time": 0,
+                                                "user2time": 0,
+                                                "user1testDurum": "devam",
+                                                "user2testDurum": "baslamadi",
+                                                "silmeDurumu": false
+                                              });
+                                              return Navigator.pushReplacement(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          rankLaunchScreen(
+                                                            user: "user1",
+                                                            nick: widget
+                                                                .finishKullaniciAdi,
+                                                            odaID: currentID,
+                                                          )));
+                                            });
+                                          },
+                                          child: Text(
+                                            "Play Again",
+                                            style: TextStyle(
+                                              fontSize: 21,
+                                              color: Color(0xFFC7D9D2),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
                           ],
                         ),
                         SizedBox(
-                          height: 70,
+                          height: 50,
                         ),
                       ],
                     ),

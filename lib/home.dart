@@ -9,9 +9,10 @@ import 'package:myfirsproje/service/auth.dart';
 import 'Finish.dart';
 
 class Home extends StatefulWidget {
-  String homekullaniciAdi, odaID;
+  String homekullaniciAdi;
+  List<int> list;
 
-  Home({this.homekullaniciAdi, this.odaID});
+  Home({this.homekullaniciAdi, this.list});
 
   @override
   _HomeState createState() => _HomeState();
@@ -75,76 +76,20 @@ class _HomeState extends State<Home> {
     DateTime now = DateTime.now();
     String formattedDate = DateFormat('kk:mm:ss \n EEE d MMM').format(now);
 
-    FirebaseFirestore.instance
-        .collection("Person")
-        .doc(FirebaseAuth.instance.currentUser.uid)
-        .get()
-        .then((DocumentSnapshot ds) {
-      userElo = ds["elo"];
-      if (_totalScore > 7) {
-        userElo = 5 + userElo;
-      } else {
-        userElo = userElo - 5;
-      }
-      //İki kullanıcı karşılaştırma ekranı
-      FirebaseFirestore.instance
-          .collection("Games")
-          .doc(widget.odaID)
-          .get()
-          .then((value) {
-        if (value[1]["totalScore"] > value[0]["totalScore"]) {
-          print("2. kullanıcı kazandı");
-        } else if (value[1]["totalScore"] == value[0]["totalScore"]) {
-          print("berabere");
-        } else
-          print("2. kullanıcı kazandı");
-      });
-      //Test bitince kullanılan oda siliniyor
-      // FirebaseFirestore.instance
-      //     .collection("Games")
-      //     .doc(FirebaseAuth.instance.currentUser.uid)
-      //     .delete();
+    //  Kulanıcının test sonuçlarını firebase'e kaydediyoruz
+    final fireStore = FirebaseFirestore.instance;
+    CollectionReference firebaseRef = fireStore
+        .collection("Users")
+        .doc("normalGame")
+        .collection(FirebaseAuth.instance.currentUser.uid);
+    Map<String, dynamic> resultsData = {
+      'kullanıcıAdi': widget.homekullaniciAdi,
+      'totalScore': _totalScore,
+      'tarih': formattedDate,
+      'süre': timer.tick,
+    };
+    firebaseRef.doc(formattedDate).set(resultsData);
 
-      //  Kulanıcının test sonuçlarını firebase'e kaydediyoruz
-      final fireStore = FirebaseFirestore.instance;
-      CollectionReference firebaseRef = fireStore
-          .collection("Users")
-          .doc("ID")
-          .collection(FirebaseAuth.instance.currentUser.uid);
-      Map<String, dynamic> resultsData = {
-        'kullanıcıAdi': widget.homekullaniciAdi,
-        'totalScore': _totalScore,
-        'elo': userElo,
-        'tarih': formattedDate,
-        'süre': timer.tick,
-      };
-      firebaseRef.doc(formattedDate).set(resultsData);
-      fireStore
-          .collection('Person')
-          .doc(FirebaseAuth.instance.currentUser.uid)
-          .update({'elo': userElo});
-
-      // Map<String, dynamic> resultCevap = {
-      //   'totalscore': _totalScore,
-      //   'nick': widget.homekullaniciAdi,
-      //   '1': cevaplar[0],
-      //   '2': cevaplar[1],
-      //   '3': cevaplar[2],
-      //   '4': cevaplar[3],
-      //   '5': cevaplar[4],
-      //   '6': cevaplar[5],
-      //   '7': cevaplar[6],
-      //   '8': cevaplar[7],
-      //   '9': cevaplar[8],
-      //   '10': cevaplar[9],
-      // };
-      // fireStore
-      //     .collection("Games")
-      //     .doc("1")
-      //     .collection(FirebaseAuth.instance.currentUser.uid)
-      //     .doc('Answers')
-      //     .set(resultCevap);
-    });
     // Sonuç ekranını açıyoruz
     Navigator.pushReplacement(
       context,
@@ -216,7 +161,7 @@ class _HomeState extends State<Home> {
       stream: FirebaseFirestore.instance.collection("Questions").snapshots(),
       builder: (context, veriAl) {
         var alinanVeri = veriAl.data.docs;
-        dogrucevap = alinanVeri[_questionIndex]["dogrucevap"];
+        dogrucevap = alinanVeri[widget.list[_questionIndex]]["dogrucevap"];
         return Scaffold(
           backgroundColor: Color(0xFF373855),
           appBar: AppBar(
@@ -298,7 +243,8 @@ class _HomeState extends State<Home> {
                   ),
                   child: Center(
                     child: Text(
-                      alinanVeri[_questionIndex]["soru"].toString(),
+                      alinanVeri[widget.list[_questionIndex]]["soru"]
+                          .toString(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20.0,
@@ -335,7 +281,7 @@ class _HomeState extends State<Home> {
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
-                      alinanVeri[_questionIndex]["1"],
+                      alinanVeri[widget.list[_questionIndex]]["1"],
                       style: TextStyle(
                         fontSize: 15.0,
                       ),
@@ -370,7 +316,7 @@ class _HomeState extends State<Home> {
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
-                      alinanVeri[_questionIndex]["2"],
+                      alinanVeri[widget.list[_questionIndex]]["2"],
                       style: TextStyle(
                         fontSize: 15.0,
                       ),
@@ -405,7 +351,7 @@ class _HomeState extends State<Home> {
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
-                      alinanVeri[_questionIndex]["3"],
+                      alinanVeri[widget.list[_questionIndex]]["3"],
                       style: TextStyle(
                         fontSize: 15.0,
                       ),
@@ -439,7 +385,7 @@ class _HomeState extends State<Home> {
                 Container(
                   padding: EdgeInsets.all(20.0),
                   child: Text(
-                    '${(_questionIndex + 1).toString()}/${_questions.length}',
+                    '${(_questionIndex + 1).toString()}',
                     style: TextStyle(
                         fontSize: 35.0,
                         fontWeight: FontWeight.bold,
@@ -472,249 +418,3 @@ class _HomeState extends State<Home> {
     );
   }
 }
-
-final _questions = const [
-  //Kolay seviye sorular
-  {
-    'question': '    "Ability" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Beceri', 'score': true},
-      {'answerText': '  Güç', 'score': false},
-      {'answerText': '  Hobi', 'score': false},
-    ],
-  },
-  {
-    'question': '    "School" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Okul', 'score': true},
-      {'answerText': '  Okumak', 'score': false},
-      {'answerText': '  Öğrenci', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Access" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Başlatmak', 'score': false},
-      {'answerText': '  Kapatmak', 'score': false},
-      {'answerText': '  Erişmek', 'score': true},
-    ],
-  },
-  {
-    'question': '    "Airport " türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Uçak', 'score': false},
-      {'answerText': '  Otobüs durağı', 'score': false},
-      {'answerText': '  Havalimanı', 'score': true},
-    ],
-  },
-  {
-    'question': '    "Bathroom" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Yatak odası', 'score': false},
-      {'answerText': '  Banyo', 'score': true},
-      {'answerText': '  Mutfak', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Blind" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Kör', 'score': true},
-      {'answerText': '  Görüş', 'score': false},
-      {'answerText': '  Kapalı', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Brain " türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Beyin', 'score': true},
-      {'answerText': '  Kafa', 'score': false},
-      {'answerText': '  Akıl', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Playground" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Oyun sahası', 'score': true},
-      {'answerText': '  Oyun', 'score': false},
-      {'answerText': '  Oyun satıcısı', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Murder" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Kanıt', 'score': false},
-      {'answerText': '  Katil', 'score': false},
-      {'answerText': '  Cinayet', 'score': true},
-    ],
-  },
-  {
-    'question': '    "Lucky" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Derece', 'score': false},
-      {'answerText': '  Bonus', 'score': false},
-      {'answerText': '  Şanslı', 'score': true},
-    ],
-  },
-  //orta seviye sorular
-  {
-    'question': '    "attention" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  atak', 'score': false},
-      {'answerText': '  Dikkat', 'score': true},
-      {'answerText': '  hücum', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Bridge" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Köprü', 'score': true},
-      {'answerText': '  Yol', 'score': false},
-      {'answerText': '  Boğaz', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Budget" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Ücret', 'score': false},
-      {'answerText': '  Bütçce', 'score': true},
-      {'answerText': '  But', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Cell " türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Satış', 'score': false},
-      {'answerText': '  Satmak', 'score': false},
-      {'answerText': '  Hücre', 'score': true},
-    ],
-  },
-  {
-    'question': '    "court" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Mahkeme', 'score': true},
-      {'answerText': '  Kuzen', 'score': false},
-      {'answerText': '  Tavşan', 'score': false},
-    ],
-  },
-  {
-    'question': '    "attorney" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Avukat', 'score': true},
-      {'answerText': '  Gün doğumu', 'score': false},
-      {'answerText': '  Saldırı', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Interview " türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Röportaj', 'score': true},
-      {'answerText': '  Ulus', 'score': false},
-      {'answerText': '  İlişki', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Measure" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Mezura', 'score': false},
-      {'answerText': '  Ölçmek', 'score': true},
-      {'answerText': '  Metre', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Pressure" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Premature', 'score': false},
-      {'answerText': '  Basmak', 'score': false},
-      {'answerText': '  Basınç', 'score': true},
-    ],
-  },
-  {
-    'question': '    "Remain" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Tekrar', 'score': false},
-      {'answerText': '  Kalmak', 'score': true},
-      {'answerText': '  Ana menü', 'score': false},
-    ],
-  },
-  // Zor seviye sorular
-  {
-    'question': '    "Lemniscate" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Sonsuzluk işareti', 'score': true},
-      {'answerText': '  Evren', 'score': false},
-      {'answerText': '  Galaksi', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Beneficial" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Faydalı', 'score': true},
-      {'answerText': '  Kayıp', 'score': false},
-      {'answerText': '  Benfikalı', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Capable " türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Yerleşim', 'score': false},
-      {'answerText': '  Kapasite', 'score': false},
-      {'answerText': '  Yetenekli', 'score': true},
-    ],
-  },
-  {
-    'question': '    "Certain" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Becerikli', 'score': false},
-      {'answerText': '  Belirli', 'score': true},
-      {'answerText': '  Belirsiz', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Differential" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Ücret farkı', 'score': true},
-      {'answerText': '  Farklılık', 'score': false},
-      {'answerText': '  Kayıp', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Inherent " türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Doğa', 'score': false},
-      {'answerText': '  Doğasında olan', 'score': true},
-      {'answerText': '  Refleks', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Intrinsic" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Esrar', 'score': false},
-      {'answerText': '  Esas', 'score': true},
-      {'answerText': '  İlginç', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Obsolete" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Orman', 'score': false},
-      {'answerText': '  Oradan', 'score': false},
-      {'answerText': '  Eskimiş', 'score': true},
-    ],
-  },
-  {
-    'question': '    "Satisfactory" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Satışlar', 'score': false},
-      {'answerText': '  Hoşnut edici', 'score': true},
-      {'answerText': '  Kar', 'score': false},
-    ],
-  },
-  {
-    'question': '    "Oyster" türkcesi nedir?',
-    'answers': [
-      {'answerText': '  Ördek', 'score': false},
-      {'answerText': '  İstridye', 'score': true},
-      {'answerText': '  İnci', 'score': false},
-    ],
-  },
-];
