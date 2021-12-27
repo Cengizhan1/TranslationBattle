@@ -7,10 +7,21 @@ import 'package:intl/intl.dart';
 import 'package:myfirsproje/Finish.dart';
 import 'package:myfirsproje/service/auth.dart';
 
-class rankedQueue extends StatefulWidget {
-  String user, homekullaniciAdi, odaID;
+import 'menu.dart';
 
-  rankedQueue({this.user, this.homekullaniciAdi, this.odaID});
+class rankedQueue extends StatefulWidget {
+  String user, homekullaniciAdi, odaID, user1url, user2url, user1, user2;
+  List<int> list;
+
+  rankedQueue(
+      {this.user,
+      this.homekullaniciAdi,
+      this.odaID,
+      this.list,
+      this.user1,
+      this.user2,
+      this.user1url,
+      this.user2url});
 
   @override
   _rankedQueueState createState() => _rankedQueueState();
@@ -120,7 +131,7 @@ class _rankedQueueState extends State<rankedQueue> {
     // final fireStore = FirebaseFirestore.instance;
     // CollectionReference firebaseRef = fireStore
     //     .collection("Users")
-    //     .doc("ID")
+    //     .doc("rankedGame")
     //     .collection(FirebaseAuth.instance.currentUser.uid);
     // Map<String, dynamic> resultsData = {
     //   'oyunTürü': "Ranked",
@@ -203,265 +214,381 @@ class _rankedQueueState extends State<rankedQueue> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection("Questions").snapshots(),
-      builder: (context, veriAl) {
-        var alinanVeri = veriAl.data.docs;
-        dogrucevap = alinanVeri[_questionIndex]["dogrucevap"];
-        return Scaffold(
-          backgroundColor: Color(0xFF373855),
-          appBar: AppBar(
-            backgroundColor: Color(0xFF373855),
-            title: Container(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '${widget.homekullaniciAdi}',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            centerTitle: true,
-          ),
-          body: Padding(
-            padding: EdgeInsets.fromLTRB(0, 15, 0, 0),
-            child: Column(
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.only(left: 8, bottom: 3),
-                      child: Icon(
-                        Icons.timer,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.only(right: 15),
-                      child: Text(
-                        '$_counter',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
-                  //margin: EdgeInsets.all(20),
-                  // padding: EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      width: 2,
-                      color: Colors.lightGreen,
-                      style: BorderStyle.solid,
-                    ),
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  child: LinearProgressIndicator(
-                    backgroundColor: Color(0xA8632626),
-                    color: Colors.green,
-                    minHeight: 7,
-                    value: value,
-                  ),
-                ),
-                Row(
-                  children: [
-                    if (_scoreTracker.length == 0)
-                      SizedBox(
-                        height: 25.0,
-                      ),
-                    if (_scoreTracker.length > 0) ..._scoreTracker
-                  ],
-                ),
-                Container(
-                  width: double.infinity,
-                  height: 130.0,
-                  margin:
-                      EdgeInsets.only(bottom: 10.0, left: 30.0, right: 30.0),
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 50.0, vertical: 20.0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: Center(
-                    child: Text(
-                      alinanVeri[_questionIndex]["soru"].toString(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20.0,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () {
-                    selectedans = 1;
-                    if (answerWasSelected) {
-                      return;
-                    }
-                    if (dogrucevap == 1) {
-                      isitcorrect = true;
-                    }
-                    _questionAnswered(isitcorrect);
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(15.0),
-                    margin:
-                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 30.0),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: (answerWasSelected)
-                          ? (dogrucevap != 1)
-                              ? (selectedans == 1)
-                                  ? Colors.red
-                                  : Colors.white
-                              : Colors.green
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      alinanVeri[_questionIndex]["1"],
-                      style: TextStyle(
-                        fontSize: 15.0,
-                      ),
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () {
-                    selectedans = 2;
-                    if (answerWasSelected) {
-                      return;
-                    }
-                    if (dogrucevap == 2) {
-                      isitcorrect = true;
-                    }
-                    _questionAnswered(isitcorrect);
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(15.0),
-                    margin:
-                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 30.0),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: (answerWasSelected)
-                          ? (dogrucevap != 2)
-                              ? (selectedans == 2)
-                                  ? Colors.red
-                                  : Colors.white
-                              : Colors.green
-                          : Colors.white,
-                      border: Border.all(color: Colors.white),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      alinanVeri[_questionIndex]["2"],
-                      style: TextStyle(
-                        fontSize: 15.0,
-                      ),
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: () {
-                    selectedans = 3;
-                    if (answerWasSelected) {
-                      return;
-                    }
-                    if (dogrucevap == 3) {
-                      isitcorrect = true;
-                    }
-                    _questionAnswered(isitcorrect);
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(15.0),
-                    margin:
-                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 30.0),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: (answerWasSelected)
-                          ? (dogrucevap != 3)
-                              ? (selectedans == 3)
-                                  ? Colors.red
-                                  : Colors.white
-                              : Colors.green
-                          : Colors.white,
-                      border: Border.all(color: Colors.white),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      alinanVeri[_questionIndex]["3"],
-                      style: TextStyle(
-                        fontSize: 15.0,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 18.0),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 40.0),
-                      primary: Colors.white,
-                    ),
-                    onPressed: () {
-                      if (!answerWasSelected) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              'Please select an answer before going to the next question'),
-                        ));
-                        return;
-                      }
-                      _nextQuestion();
-                    },
-                    child: Text(
-                      endOfQuiz ? 'Restart Quiz' : 'Next Question',
-                      style: TextStyle(color: Colors.black, fontSize: 16),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(20.0),
-                  child: Text(
-                    '${(_questionIndex + 1).toString()}/${_questions.length}',
-                    style: TextStyle(
-                        fontSize: 35.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  ),
-                ),
-                if (answerWasSelected && !endOfQuiz)
-                  Container(
-                    height: 30,
-                    width: double.infinity,
-                    color: correctAnswerSelected ? Colors.green : Colors.red,
-                    child: Center(
-                      child: Text(
-                        correctAnswerSelected
-                            ? 'Well done, you got it right!'
-                            : 'Wrong :/',
-                        style: TextStyle(
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+  showAlertDialog(BuildContext context) {
+    // set up the buttons
+    Widget cancelButton = TextButton(
+      child: Text(
+        "Quit",
+        style: TextStyle(
+            color: Colors.red, fontSize: 17, fontWeight: FontWeight.bold),
+      ),
+      onPressed: () {
+        FirebaseFirestore.instance
+            .collection("Games")
+            .doc(widget.odaID)
+            .update({
+          "silmeDurumu": true,
+          widget.user.toString() + "testDurum": "bitti",
+        });
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Menu(),
           ),
         );
       },
+    );
+    Widget continueButton = TextButton(
+      child: Text(
+        "Continue",
+        style: TextStyle(
+            color: Colors.green, fontSize: 17, fontWeight: FontWeight.bold),
+      ),
+      onPressed: () => Navigator.pop(context, false),
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      backgroundColor: Colors.white,
+      content: Text(
+        "Are you sure you want to quit?",
+        style: TextStyle(
+            color: Colors.black, fontSize: 17, fontWeight: FontWeight.normal),
+      ),
+      actions: [
+        cancelButton,
+        continueButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () {
+        showAlertDialog(context);
+      },
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection("Questions").snapshots(),
+        builder: (context, veriAl) {
+          var alinanVeri = veriAl.data.docs;
+          dogrucevap = alinanVeri[widget.list[_questionIndex]]["dogrucevap"];
+          return Scaffold(
+            backgroundColor: Color(0xFF373855),
+            body: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.fromLTRB(8, 4, 8, 4),
+                  margin: EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    border: Border.all(width: 1.5, color: Colors.deepOrange),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Image.network(
+                            widget.user1url.toString(),
+                            height: 50,
+                          ),
+                          Text(
+                            widget.user1,
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      Image.network(
+                        "https://firebasestorage.googleapis.com/v0/b/translatebattle.appspot.com/o/vs1.png?alt=media&token=9916bdf8-6797-48bb-87d7-d89c1fe6aede",
+                        height: 40,
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            widget.user2,
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                          Image.network(
+                            widget.user2url.toString(),
+                            height: 50,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(0, 6, 0, 0),
+                      child: Column(
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.only(left: 8, bottom: 3),
+                                child: Icon(
+                                  Icons.timer,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Container(
+                                padding: EdgeInsets.only(right: 15),
+                                child: Text(
+                                  '$_counter',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            margin: EdgeInsets.fromLTRB(20, 0, 20, 10),
+                            //margin: EdgeInsets.all(20),
+                            // padding: EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                width: 2,
+                                color: Colors.lightGreen,
+                                style: BorderStyle.solid,
+                              ),
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: LinearProgressIndicator(
+                              backgroundColor: Color(0xA8632626),
+                              color: Colors.green,
+                              minHeight: 7,
+                              value: value,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              if (_scoreTracker.length == 0)
+                                SizedBox(
+                                  height: 25.0,
+                                ),
+                              if (_scoreTracker.length > 0) ..._scoreTracker
+                            ],
+                          ),
+                          Container(
+                            width: double.infinity,
+                            height: 130.0,
+                            margin: EdgeInsets.only(
+                                bottom: 10.0, left: 30.0, right: 30.0),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 50.0, vertical: 20.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            child: Center(
+                              child: Text(
+                                alinanVeri[widget.list[_questionIndex]]["soru"]
+                                    .toString(),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20.0,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              if (answerWasSelected) {
+                                return;
+                              }
+                              selectedans = 1;
+                              if (answerWasSelected) {
+                                return;
+                              }
+                              if (dogrucevap == 1) {
+                                isitcorrect = true;
+                              }
+                              _questionAnswered(isitcorrect);
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(15.0),
+                              margin: EdgeInsets.symmetric(
+                                  vertical: 5.0, horizontal: 30.0),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: (answerWasSelected)
+                                    ? (dogrucevap != 1)
+                                        ? (selectedans == 1)
+                                            ? Colors.red
+                                            : Colors.white
+                                        : Colors.green
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              child: Text(
+                                alinanVeri[widget.list[_questionIndex]]["1"],
+                                style: TextStyle(
+                                  fontSize: 15.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              if (answerWasSelected) {
+                                return;
+                              }
+                              selectedans = 2;
+                              if (answerWasSelected) {
+                                return;
+                              }
+                              if (dogrucevap == 2) {
+                                isitcorrect = true;
+                              }
+                              _questionAnswered(isitcorrect);
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(15.0),
+                              margin: EdgeInsets.symmetric(
+                                  vertical: 5.0, horizontal: 30.0),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: (answerWasSelected)
+                                    ? (dogrucevap != 2)
+                                        ? (selectedans == 2)
+                                            ? Colors.red
+                                            : Colors.white
+                                        : Colors.green
+                                    : Colors.white,
+                                border: Border.all(color: Colors.white),
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              child: Text(
+                                alinanVeri[widget.list[_questionIndex]]["2"],
+                                style: TextStyle(
+                                  fontSize: 15.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              if (answerWasSelected) {
+                                return;
+                              }
+                              selectedans = 3;
+                              if (answerWasSelected) {
+                                return;
+                              }
+                              if (dogrucevap == 3) {
+                                isitcorrect = true;
+                              }
+                              _questionAnswered(isitcorrect);
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(15.0),
+                              margin: EdgeInsets.symmetric(
+                                  vertical: 5.0, horizontal: 30.0),
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: (answerWasSelected)
+                                    ? (dogrucevap != 3)
+                                        ? (selectedans == 3)
+                                            ? Colors.red
+                                            : Colors.white
+                                        : Colors.green
+                                    : Colors.white,
+                                border: Border.all(color: Colors.white),
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              child: Text(
+                                alinanVeri[widget.list[_questionIndex]]["3"],
+                                style: TextStyle(
+                                  fontSize: 15.0,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 15.0),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  minimumSize: Size(double.infinity, 45.0),
+                                  primary: Colors.deepOrange,
+                                  elevation: 20,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  )),
+                              onPressed: () {
+                                if (!answerWasSelected) {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                    content: Text(
+                                        'Please select an answer before going to the next question'),
+                                  ));
+                                  return;
+                                }
+                                _nextQuestion();
+                              },
+                              child: Text(
+                                endOfQuiz ? 'Restart Quiz' : 'Next Question',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 18),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.all(18.0),
+                            child: Text(
+                              '${(_questionIndex + 1).toString()}',
+                              style: TextStyle(
+                                  fontSize: 35.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                          ),
+                          if (answerWasSelected && !endOfQuiz)
+                            Container(
+                              height: 30,
+                              width: double.infinity,
+                              color: correctAnswerSelected
+                                  ? Colors.green
+                                  : Colors.red,
+                              child: Center(
+                                child: Text(
+                                  correctAnswerSelected
+                                      ? 'Well done, you got it right!'
+                                      : 'Wrong :/',
+                                  style: TextStyle(
+                                    fontSize: 20.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -469,7 +596,9 @@ class _rankedQueueState extends State<rankedQueue> {
 class sonucHesaplama extends StatefulWidget {
   int elo = 0;
   String user, odaID = "", nick;
+
   sonucHesaplama({this.user, this.elo, this.odaID, this.nick});
+
   @override
   _sonucHesaplamaState createState() => _sonucHesaplamaState();
 }
@@ -479,6 +608,8 @@ class _sonucHesaplamaState extends State<sonucHesaplama> {
   String bitisDurumu2 = "devam";
   String u1Kazanma = "kaybetti";
   String u2Kazanma = "kaybetti";
+  String user1ad, user2ad, user1resim, user2resim;
+  int user1score, user2score, user1time, user2time;
 
   @override
   Widget build(BuildContext context) {
@@ -491,6 +622,23 @@ class _sonucHesaplamaState extends State<sonucHesaplama> {
           var alinan = veri.data;
           bitisDurumu1 = alinan["user1testDurum"].toString();
           bitisDurumu2 = alinan["user2testDurum"].toString();
+
+          user1ad = alinan["user1"];
+          user1resim = alinan["user1resim"];
+          user2ad = alinan["user2"];
+          user2resim = alinan["user2resim"];
+
+          // İki kullanıcının testtinin bitip bitmediği kontrol ediliyor.
+          // Daha sonra kimin kazanıldığı total skor ve ssüreye göre belirleniyor
+          if (bitisDurumu1 == "bitti") {
+            user1score = alinan["user1totalScore"];
+            user1time = alinan["user1time"];
+          }
+          if (bitisDurumu2 == "bitti") {
+            user2score = alinan["user2totalScore"];
+            user2time = alinan["user2time"];
+          }
+
           if (bitisDurumu1 == "bitti" && bitisDurumu2 == "bitti") {
             if (alinan["user1totalScore"] > alinan["user2totalScore"]) {
               u1Kazanma = "kazandı";
@@ -499,160 +647,256 @@ class _sonucHesaplamaState extends State<sonucHesaplama> {
               u2Kazanma = "kazandı";
             }
             if (alinan["user1totalScore"] == alinan["user2totalScore"]) {
-              u1Kazanma = u2Kazanma = "berabere";
+              if (alinan["user1time"] > alinan["user2time"]) {
+                u2Kazanma = "kazandı";
+              }
+              if (alinan["user1time"] < alinan["user2time"]) {
+                u1Kazanma = "kazandı";
+              }
+              if (alinan["user1time"] == alinan["user2time"]) {
+                u1Kazanma = u2Kazanma = "berabere";
+              }
             }
+            // kullanılan oda siliniyor
+
           }
 
           return Scaffold(
             backgroundColor: Color(0xE2013865),
-            body: Column(
+            body: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(50, 200, 0, 0),
-                  child: Row(
-                    children: [
-                      Image.network(
-                        alinan["user1resim"].toString(),
-                        height: 150,
-                        width: 150,
-                      ),
-                      Image.network(
-                        alinan["user2resim"].toString(),
-                        height: 150,
-                        width: 150,
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
-                  child: Row(
-                    children: [
-                      Text(
-                        alinan["user1"],
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                      SizedBox(
-                        width: 50,
-                      ),
-                      Text(
-                        alinan["user2"],
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
-                  child: Row(
-                    children: [
-                      (alinan["user1testDurum"] == "bitti")
-                          ? Text(
-                              alinan["user1totalScore"].toString(),
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20),
-                            )
-                          : CircularProgressIndicator(
-                              color: Colors.red, strokeWidth: 5),
-                      SizedBox(
-                        width: 50,
-                      ),
-                      (alinan["user2testDurum"] == "bitti")
-                          ? Text(
-                              alinan["user2totalScore"].toString(),
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20),
-                            )
-                          : CircularProgressIndicator(
-                              color: Colors.red, strokeWidth: 5),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
-                  child: Row(
-                    children: [
-                      (alinan["user1testDurum"] == "bitti")
-                          ? Text(
-                              alinan["user1time"].toString(),
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20),
-                            )
-                          : CircularProgressIndicator(
-                              color: Colors.red, strokeWidth: 5),
-                      SizedBox(
-                        width: 75,
-                      ),
-                      (alinan["user2testDurum"] == "bitti")
-                          ? Text(
-                              alinan["user2time"].toString(),
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20),
-                            )
-                          : CircularProgressIndicator(
-                              color: Colors.red, strokeWidth: 5),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(80, 20, 0, 0),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 50,
-                        height: 50,
-                      ),
-                      (bitisDurumu1 == "bitti" && bitisDurumu2 == "bitti")
-                          ? (alinan["user1totalScore"] >
-                                  alinan["user2totalScore"])
-                              ? Text("${alinan["user1"]} kazandı")
-                              : (alinan["user1totalScore"] <
-                                      alinan["user2totalScore"])
-                                  ? Text("${alinan["user2"]} kazandı")
-                                  : Text("berabere")
-                          : Text("Diğer kullanici bekleniyor")
-                    ],
-                  ),
-                ),
-                Row(
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    (bitisDurumu1 == "bitti" && bitisDurumu2 == "bitti")
-                        ? ElevatedButton(
-                            onPressed: () {
-                              (widget.nick == alinan["user1"].toString())
-                                  ? Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => Finishh(
-                                                finishKullaniciAdi: widget.nick,
-                                                totalScore:
-                                                    alinan["user1totalScore"],
-                                                kazan: u1Kazanma,
-                                                elo: widget.elo,
-                                              )))
-                                  : Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => Finishh(
-                                                finishKullaniciAdi: widget.nick,
-                                                totalScore:
-                                                    alinan["user2totalScore"],
-                                                kazan: u2Kazanma,
-                                                elo: widget.elo,
-                                              )));
-                            },
-                            child: Text("Bitir"),
-                            style: ElevatedButton.styleFrom(
-                              primary: Color(0xFF1A8B8B),
-                              fixedSize: (Size(75, 75)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(38),
+                    Text(
+                      bitisDurumu1 == "bitti" && bitisDurumu2 == "bitt"
+                          ? u1Kazanma != "berabere"
+                              ? u1Kazanma == "kazandı"
+                                  ? "$user1ad kazandı"
+                                  : "$user2ad kazandı"
+                              : "berabere"
+                          : "Diğer kullanici bekleniyor",
+                      style: TextStyle(
+                        fontSize: 22,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 30,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                          child: Container(
+                            padding: EdgeInsets.fromLTRB(8, 25, 8, 25),
+                            decoration: BoxDecoration(
+                              color: Color(0x660CFF00),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(40),
+                                topRight: Radius.circular(10),
+                                bottomRight: Radius.circular(30),
                               ),
                             ),
-                          )
-                        : Text(""),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.network(
+                                  user1resim.toString(),
+                                  height: 140,
+                                ),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Text(
+                                  user1ad,
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 20),
+                                ),
+                                SizedBox(
+                                  height: 20,
+                                ),
+                                (bitisDurumu1 == "bitti")
+                                    ? Text(
+                                        user1score.toString(),
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20),
+                                      )
+                                    : CircularProgressIndicator(
+                                        color: Colors.red, strokeWidth: 5),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                (bitisDurumu1 == "bitti")
+                                    ? Text(
+                                        user1time.toString(),
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20),
+                                      )
+                                    : CircularProgressIndicator(
+                                        color: Colors.red, strokeWidth: 5),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
+                          child: Container(
+                            padding: EdgeInsets.fromLTRB(8, 25, 8, 25),
+                            decoration: BoxDecoration(
+                              color: Color(0xBAFF0000),
+                              borderRadius: BorderRadius.only(
+                                topRight: Radius.circular(40),
+                                bottomLeft: Radius.circular(30),
+                                topLeft: Radius.circular(10),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Image.network(
+                                  user2resim.toString(),
+                                  height: 140,
+                                ),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Text(
+                                  user2ad,
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 20),
+                                ),
+                                SizedBox(
+                                  height: 20,
+                                ),
+                                (bitisDurumu2 == "bitti")
+                                    ? Text(
+                                        user2score.toString(),
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20),
+                                      )
+                                    : CircularProgressIndicator(
+                                        color: Colors.red, strokeWidth: 5),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                (bitisDurumu2 == "bitti")
+                                    ? Text(
+                                        user2time.toString(),
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 20),
+                                      )
+                                    : CircularProgressIndicator(
+                                        color: Colors.red, strokeWidth: 5),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 30,
+                    ),
+                    Row(
+                      children: [
+                        (bitisDurumu1 == "bitti" && bitisDurumu2 == "bitti")
+                            ? ElevatedButton(
+                                onPressed: () {
+                                  if ((widget.nick == user1ad)) {
+                                    print(
+                                        "sa sa sasasasaasasasssaassssssssssssssssssssssssssssssssss");
+                                    if (alinan["silmeDurumu"] == false) {
+                                      FirebaseFirestore.instance
+                                          .collection("Games")
+                                          .doc(widget.odaID)
+                                          .update({"silmeDurumu": true});
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => Finishh(
+                                            finishKullaniciAdi: widget.nick,
+                                            totalScore: user1score,
+                                            kazan: u1Kazanma,
+                                            elo: widget.elo,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      FirebaseFirestore.instance
+                                          .collection("Games")
+                                          .doc(widget.odaID)
+                                          .delete();
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => Finishh(
+                                            finishKullaniciAdi: widget.nick,
+                                            totalScore: user1score,
+                                            kazan: u1Kazanma,
+                                            elo: widget.elo,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    if (alinan["silmeDurumu"] == false) {
+                                      FirebaseFirestore.instance
+                                          .collection("Games")
+                                          .doc(widget.odaID)
+                                          .update({"silmeDurumu": true});
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => Finishh(
+                                            finishKullaniciAdi: widget.nick,
+                                            totalScore: user2score,
+                                            kazan: u2Kazanma,
+                                            elo: widget.elo,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      FirebaseFirestore.instance
+                                          .collection("Games")
+                                          .doc(widget.odaID)
+                                          .delete();
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => Finishh(
+                                            finishKullaniciAdi: widget.nick,
+                                            totalScore: user2score,
+                                            kazan: u2Kazanma,
+                                            elo: widget.elo,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                child: Text(
+                                  "Finished",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  primary: Color(0xF52498AF),
+                                  fixedSize: (Size(120, 50)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                ),
+                              )
+                            : Text(""),
+                      ],
+                    )
                   ],
-                )
+                ),
               ],
             ),
           );
