@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class AuthService {
@@ -32,9 +31,11 @@ class AuthService {
       'userName': name,
       'nick': nick,
       'email': email,
-      'elo': 200,
+      'elo': -100,
       'durum': false,
       'resim': resimYolu,
+      'level': 1,
+      "currentId": FirebaseAuth.instance.currentUser.uid,
     });
 
     return user.user;
@@ -65,13 +66,21 @@ class AuthService {
   }
 
   Future resimAl(String resim) async {
-    var data = await FirebaseStorage.instance.ref().child(resim);
-
-    var url = await data.getDownloadURL();
+    // var data = await FirebaseStorage.instance.ref().child(resim);
+    //
+    // var url = await data.getDownloadURL();
 
     _firestore
         .collection("Person")
         .doc(_auth.currentUser.uid)
-        .update({"resim": url});
+        .update({"resim": resim});
+  }
+
+  Future istatistikGncelle(int soruno, int istatistik) async {
+    int ist = istatistik + 1;
+    _firestore
+        .collection("Question")
+        .doc("$soruno")
+        .update({"istatistik": ist});
   }
 }
